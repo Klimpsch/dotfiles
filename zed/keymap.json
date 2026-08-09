@@ -1,0 +1,95 @@
+// Zed keymap
+// Leader = space (normal & visual mode)
+[
+  {
+    // jk escapes to normal mode from insert
+    "context": "vim_mode == insert",
+    "bindings": {
+      "j k": "vim::NormalBefore"
+    }
+  },
+  {
+    // Disable space's default action so it can act as a leader.
+    // VimControl = normal + visual + operator-pending.
+    "context": "VimControl && !menu",
+    "bindings": {
+      "space": null
+    }
+  },
+  {
+    // d and x delete into the black hole register — never pasteable.
+    // c still cuts normally, so changed text stays yankable/pasteable.
+    "context": "vim_mode == normal || vim_mode == visual",
+    "bindings": {
+      "d": ["workspace::SendKeystrokes", "\" _ d"],
+      "D": ["workspace::SendKeystrokes", "\" _ D"],
+      "x": ["workspace::SendKeystrokes", "\" _ x"],
+      "delete": ["workspace::SendKeystrokes", "\" _ x"]
+
+    }
+  },
+  {
+    // Files & search
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "space space": "file_finder::Toggle",
+      "space f f": "file_finder::Toggle",
+      "space f g": "pane::DeploySearch",
+      "space f r": "projects::OpenRecent",
+      "space f n": "workspace::NewFile",
+      // Buffers / tabs
+      "space b d": "pane::CloseActiveItem",
+      "space b o": "pane::CloseInactiveItems",
+      "shift-h": "pane::ActivatePreviousItem",
+      "shift-l": "pane::ActivateNextItem",
+      // File tree
+      "space e": "project_panel::ToggleFocus",
+      // Code / LSP
+      "g d": "editor::GoToDefinition",
+      "g r": "editor::FindAllReferences",
+      "g i": "editor::GoToImplementation",
+      "space c a": "editor::ToggleCodeActions",
+      "space c r": "editor::Rename",
+      "space c f": "editor::Format",
+      "space c d": "editor::Hover",
+      "[ d": "editor::GoToPreviousDiagnostic",
+      "] d": "editor::GoToDiagnostic",
+      // Splits / pane navigation
+      "ctrl-h": ["workspace::ActivatePaneInDirection", "Left"],
+      "ctrl-l": ["workspace::ActivatePaneInDirection", "Right"],
+      "ctrl-k": ["workspace::ActivatePaneInDirection", "Up"],
+      "ctrl-j": ["workspace::ActivatePaneInDirection", "Down"],
+      "space w v": "pane::SplitRight",
+      "space w s": "pane::SplitDown",
+      "space w q": "pane::CloseActiveItem",
+      // Save / quit
+      "space w w": "workspace::Save",
+      "space q q": "zed::Quit",
+      // Clear search highlight
+      "space n h": "vim::ClearOperators"
+    }
+  },
+  {
+    // Keep the leader working when no file is open (fresh window)
+    "context": "EmptyPane || SharedScreen",
+    "bindings": {
+      "space space": "file_finder::Toggle",
+      "space f r": "projects::OpenRecent",
+      "space f n": "workspace::NewFile"
+    }
+  },
+  {
+    // netrw-style file tree bindings
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "a": "project_panel::NewFile",
+      "shift-a": "project_panel::NewDirectory",
+      "r": "project_panel::Rename",
+      "d": "project_panel::Trash",
+      "x": "project_panel::Cut",
+      "c": "project_panel::Copy",
+      "p": "project_panel::Paste",
+      "space e": "project_panel::ToggleFocus"
+    }
+  }
+]

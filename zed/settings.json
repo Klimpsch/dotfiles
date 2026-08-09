@@ -1,0 +1,33 @@
+{
+  "icon_theme": "Zed (Default)",
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false,
+    "anthropic_retention": false
+  },
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "vim_mode": true,
+  "base_keymap": "Zed",
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "use_autoclose": false,
+  "theme": {
+    "mode": "dark",
+    "light": "One Light",
+    "dark": "Nord Dark"
+  },
+  "vim": {
+    "use_system_clipboard": "on_yank"
+  },
+  "experimental.theme_overrides": {
+    "syntax": {
+      "title": { "color": "#88c0d0", "font_weight": 700 },
+      "emphasis": { "color": "#d08770", "font_style": "italic" },
+      "emphasis.strong": { "color": "#d08770", "font_weight": 700 },
+      "link_text": { "color": "#5e81ac" },
+      "link_uri": { "color": "#a3be8c" }
+    }
+  }
+}
