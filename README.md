@@ -1,8 +1,9 @@
 # Dotfiles
 
 ## On new machine
+
 ```bash
-git clone https://github.com/you/dotfiles.git ~/dotfiles
+git https://github.com/Klimpsch/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./install.sh
 ```
