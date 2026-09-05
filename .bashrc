@@ -77,7 +77,6 @@ open() { xdg-open "${1:-.}" >/dev/null 2>&1; }   # macOS: replace xdg-open with 
 repos() { cd ~/git; }
 reload() { source ~/.bashrc && echo -e "\033[32mbashrc reloaded.\033[0m"; }
 
-alias vim='nvim'
 alias gpull='gitpullall'
 alias gpush='gitpushall'
 alias gstat='gitstatall'
@@ -90,4 +89,3 @@ HISTFILESIZE=20000
 HISTCONTROL=ignoreboth          # ignore dupes and lines starting with a space
 shopt -s histappend             # append instead of overwriting
 PROMPT_COMMAND="history -a; ${PROMPT_COMMAND:-}"   # write history after each command
-
