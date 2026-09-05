@@ -8,7 +8,6 @@ DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare -A LINKS=(
   [bashrc]="$HOME/.bashrc"
   [vimrc]="$HOME/.vimrc"
-  [gitconfig]="$HOME/.gitconfig"
 )
 
 for src in "${!LINKS[@]}"; do
