@@ -16,7 +16,7 @@
      4. UI / core UX plugins      11. Tools (git, terminal, explorer, outline)
      5. Search & navigation       12. Markdown
      6. LSP                       13. Next steps
-     7. Formatting
+     7. Formatting                14. Terminal colours
 --]]
 
 -- ============================================================
@@ -36,6 +36,13 @@ do
   -- Set to true if you have a Nerd Font installed and selected in the terminal
   vim.g.have_nerd_font = false
 
+  -- Use the terminal's own colour theme instead of a Neovim colorscheme.
+  -- With this off, Neovim sends the terminal's 16 palette colours (and its
+  -- default foreground/background) rather than 24-bit RGB values, so whatever
+  -- theme your terminal is running is what you see. No colorscheme is loaded.
+  -- Must be set before plugins load. See `:help 'termguicolors'`
+  vim.o.termguicolors = false
+
   -- [[ Setting options ]]
   --  See `:help vim.o` and `:help option-list`
 
@@ -50,12 +57,11 @@ do
   -- Don't show the mode, since it's already in the status line
   vim.o.showmode = false
 
-  -- Sync clipboard between OS and Neovim.
-  --  Yanks (y) and cuts (d/D, visual x/X) go to the system clipboard.
-  --  Changes (c/C), single-char deletes (x/X) and <Del> are routed to the
-  --  black-hole register by the mappings in Section 2.
-  --  See `:help 'clipboard'`
-  vim.o.clipboard = 'unnamedplus'
+  -- Clipboard: NOT synced globally. Only yanks (y), pastes (p) and the
+  -- explicit cut keys (Section 2) use the system clipboard, so ordinary
+  -- deletes (d, x, c, s, <Del>) never overwrite it.
+  --  See `:help 'clipboard'` and `:help registers`
+  -- vim.o.clipboard = 'unnamedplus'
 
   -- Enable break indent
   vim.o.breakindent = true
@@ -119,28 +125,36 @@ do
   -- `q` to close map it buffer-locally, so they keep working.
   vim.keymap.set('n', 'q', '<Nop>')
 
-  -- [[ Cut vs. delete ]]
-  -- `d`/`D` (and `x`/`X` in visual mode) act as CUT: the text goes to the
-  -- system clipboard via clipboard=unnamedplus, so you can paste it anywhere.
-  -- Changes (`c`, `C`), single-char deletes (`x`, `X`) and <Del> go to the
-  -- black-hole register ("_) so they don't overwrite your clipboard.
-  --
-  -- Visual mappings use mode 'x' (visual only) rather than 'v' (visual + select),
-  -- so typing inside snippet placeholders (select mode) isn't hijacked.
+  -- [[ Clipboard: copy, cut, paste ]]
+  --  y / Y           copy to clipboard
+  --  p / P           paste from clipboard
+  --  <leader>d{motion}, <leader>dd, <leader>D   cut to clipboard
+  --  visual c                                   cut selection to clipboard
+  -- Everything else that deletes (d, x, c, s, <Del>) stays out of the clipboard.
+  -- Deleted text is still in Neovim's own registers: `""p` pastes the last delete.
+  -- If you type a register first (e.g. "ay or "ap), that register is used instead.
   do
-    local opts = { silent = true }
-    for _, key in ipairs { 'x', 'X', 'c', 'C' } do
-      vim.keymap.set('n', key, '"_' .. key, opts)
+    local function clip(keys)
+      return function() return (vim.v.register == '"' and '"+' or '') .. keys end
     end
-    for _, key in ipairs { 'c', 'C' } do
-      vim.keymap.set('x', key, '"_' .. key, opts)
-    end
-    -- The physical Delete key
-    vim.keymap.set({ 'n', 'x' }, '<Del>', '"_x', opts)
-    -- Visual-mode paste shouldn't clobber the clipboard with the replaced text.
-    -- Built-in visual `P` already does exactly that (see `:help v_P`), and unlike
-    -- `"_dP` it also behaves correctly at the end of a line.
-    vim.keymap.set('x', 'p', 'P', opts)
+    local opts = { expr = true, silent = true }
+
+    -- Copy
+    vim.keymap.set({ 'n', 'x' }, 'y', clip 'y', vim.tbl_extend('force', opts, { desc = 'Copy to clipboard' }))
+    vim.keymap.set('n', 'Y', clip 'y$', vim.tbl_extend('force', opts, { desc = 'Copy to end of line' }))
+
+    -- Paste (visual P replaces the selection without copying what it replaced)
+    vim.keymap.set('n', 'p', clip 'p', opts)
+    vim.keymap.set('n', 'P', clip 'P', opts)
+    vim.keymap.set('x', 'p', clip 'P', opts)
+    vim.keymap.set('x', 'P', clip 'P', opts)
+
+    -- Cut
+    vim.keymap.set('n', '<leader>d', '"+d', { desc = 'Cut (motion) to clipboard' })
+    vim.keymap.set('n', '<leader>D', '"+D', { desc = 'Cut to end of line' })
+    -- Visual `c` cuts the selection. To replace a selection with typed text
+    -- instead (what visual `c` normally does), use visual `s`.
+    vim.keymap.set('x', 'c', '"+d', { desc = 'Cut selection to clipboard' })
   end
 
   -- Diagnostic Config & Keymaps
@@ -304,7 +318,7 @@ local function gh(repo) return 'https://github.com/' .. repo end
 
 -- ============================================================
 -- SECTION 4: UI / CORE UX PLUGINS
--- guess-indent, gitsigns, which-key, colorscheme, todo-comments, mini modules
+-- guess-indent, gitsigns, which-key, colours, todo-comments, mini modules
 -- ============================================================
 do
   -- [[ Installing and Configuring Plugins ]]
@@ -389,13 +403,9 @@ do
     },
   }
 
-  -- [[ Colorscheme: plain ]]
-  -- Minimal, near-monochrome theme (https://github.com/andreypopp/vim-colors-plain).
-  -- Supports both dark and light backgrounds. Loaded before lualine (Section 10)
-  -- so lualine's 'auto' theme picks up its colors.
-  vim.pack.add { gh 'andreypopp/vim-colors-plain' }
-  vim.o.background = 'light' -- 'light' = black-on-white, 'dark' = white-on-black
-  vim.cmd.colorscheme 'plain'
+  -- [[ Colours ]]
+  -- No colorscheme: colours come from the terminal's theme (see 'termguicolors'
+  -- in Section 1). A few small fix-ups for plugins live in Section 14.
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
@@ -441,14 +451,7 @@ do
   -- Animated indent-scope guide
   require('mini.indentscope').setup()
 
-  -- NOTE: mini.statusline is intentionally NOT set up here, because Section 10
-  --  uses lualine.nvim as the statusline. If you'd rather use mini's
-  --  statusline, remove the lualine block in Section 10 and uncomment below:
-  --
-  -- local statusline = require 'mini.statusline'
-  -- statusline.setup { use_icons = vim.g.have_nerd_font }
-  -- ---@diagnostic disable-next-line: duplicate-set-field
-  -- statusline.section_location = function() return '%2l:%-2v' end
+  -- NOTE: mini.statusline and mini.tabline are set up in Section 10.
 
   -- ... and there is more! Check out: https://github.com/nvim-mini/mini.nvim
 end
@@ -884,38 +887,24 @@ end
 
 -- ============================================================
 -- SECTION 10: STATUSLINE, BUFFERS & FOCUS
--- lualine, bufferline, buffer management, zen-mode + twilight
+-- statusline, buffer tabs, buffer management, zen-mode + twilight
 -- ============================================================
 do
-  -- [[ Lualine statusline ]]
-  -- NOTE: this is why mini.statusline is left disabled in Section 4.
-  vim.pack.add { gh 'nvim-lualine/lualine.nvim' }
-  require('lualine').setup {
-    options = {
-      theme = 'auto', -- derive colors from the active colorscheme (set in Section 4)
-      icons_enabled = vim.g.have_nerd_font,
-      -- Flat look. Delete these two lines to get lualine's default
-      -- powerline-style arrow separators (those need a Nerd Font).
-      section_separators = '',
-      component_separators = '',
-    },
-  }
+  -- [[ Statusline and buffer tabs ]]
+  -- Both come from mini.nvim (Section 4). They build their colours from
+  -- standard highlight groups, so they follow the terminal's theme.
+  -- (lualine and bufferline were removed: lualine converts its colours to
+  -- approximate 256-colour values instead of the terminal palette, and
+  -- bufferline expects 'termguicolors' to be on.)
+  local statusline = require 'mini.statusline'
+  statusline.setup { use_icons = vim.g.have_nerd_font }
+  ---@diagnostic disable-next-line: duplicate-set-field
+  statusline.section_location = function() return '%2l:%-2v' end
 
-  -- [[ Bufferline ]]
-  vim.pack.add { gh 'akinsho/bufferline.nvim' }
-  require('bufferline').setup {
-    options = {
-      diagnostics = 'nvim_lsp', -- show LSP error/warn counts on tabs
-      offsets = { -- don't overlap the neo-tree sidebar
-        { filetype = 'neo-tree', text = 'File Explorer', separator = true },
-      },
-      show_close_icon = false,
-    },
-  }
+  require('mini.tabline').setup { show_icons = vim.g.have_nerd_font }
 
-  vim.keymap.set('n', '<S-l>', '<cmd>BufferLineCycleNext<CR>', { desc = 'Next buffer' })
-  vim.keymap.set('n', '<S-h>', '<cmd>BufferLineCyclePrev<CR>', { desc = 'Prev buffer' })
-  vim.keymap.set('n', '<leader>bp', '<cmd>BufferLineTogglePin<CR>', { desc = '[B]uffer [P]in' })
+  vim.keymap.set('n', '<S-l>', '<cmd>bnext<CR>', { desc = 'Next buffer' })
+  vim.keymap.set('n', '<S-h>', '<cmd>bprevious<CR>', { desc = 'Prev buffer' })
 
   -- [[ Buffer management ]]
   -- mini.bufremove comes from mini.nvim (Section 4). Deleting buffers through
@@ -1018,7 +1007,11 @@ do
   -- Renders headings, code blocks, lists, tables, etc. directly in the buffer.
   -- Uses the `markdown` / `markdown_inline` parsers from Section 9.
   vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
-  require('render-markdown').setup {}
+  require('render-markdown').setup {
+    -- Code block shading and borders need true colour; without it they show
+    -- as reverse video and solid blocks, so turn them off (Section 1).
+    code = { disable_background = true, border = 'none', language_border = ' ' },
+  }
   vim.keymap.set('n', '<leader>mp', '<cmd>RenderMarkdown toggle<CR>', { desc = '[M]arkdown [P]review (in-buffer) toggle' })
 
   -- [[ Browser preview ]]
@@ -1059,4 +1052,66 @@ do
   -- require 'custom.plugins.colorscheme'
   -- require 'custom.plugins.ui'
   -- require 'custom.plugins.git'
+end
+
+-- ============================================================
+-- SECTION 14: TERMINAL COLOURS
+-- Fix-ups so plugins use the terminal's palette (keep this last)
+-- ============================================================
+do
+  -- With 'termguicolors' off (Section 1), Neovim uses your terminal's theme.
+  -- Some plugins and default groups only define 24-bit colours, which are then
+  -- ignored, so these give them terminal palette colours instead. Palette:
+  --   1 red, 2 green, 3 yellow, 4 blue, 5 magenta, 6 cyan, as set by your theme.
+  --
+  -- Only the six normal colours (1-6) are used. Many terminal themes make the
+  -- "bright" colours (8-15) very dim or close to the background (Solarized,
+  -- for example, uses them as background greys), which makes text vanish.
+  -- This runs after every plugin is set up, so nothing overrides it.
+  local function terminal_colours()
+    local hl = function(name, val) vim.api.nvim_set_hl(0, name, val) end
+
+    -- Swap any bright colour (8-15) for its normal version (0-7) in every
+    -- highlight group defined so far, e.g. bright green 10 -> green 2.
+    for name, def in pairs(vim.api.nvim_get_hl(0, {})) do
+      if not def.link then
+        local changed = false
+        for _, key in ipairs { 'ctermfg', 'ctermbg' } do
+          if def[key] and def[key] >= 8 and def[key] <= 15 then
+            def[key] = def[key] - 8
+            changed = true
+          end
+        end
+        if changed then
+          def.default = nil
+          hl(name, def)
+        end
+      end
+    end
+
+    -- Comments, line numbers and whitespace markers in your normal text colour.
+    -- Comments are italic so they still stand out. Set a colour here if you
+    -- want them dimmer, e.g. { ctermfg = 8, italic = true } if 8 is readable.
+    hl('Comment', { italic = true })
+    hl('NonText', {})
+    hl('LineNr', {})
+
+    -- Twilight's "dimmed" text looks like a comment
+    hl('Twilight', { link = 'Comment' })
+
+    -- todo-comments: TODO, FIX, NOTE, etc. in the terminal's red/yellow/cyan/...
+    local todo = { FIX = 1, TODO = 6, HACK = 3, WARN = 3, PERF = 5, NOTE = 4, TEST = 5 }
+    for kw, colour in pairs(todo) do
+      hl('TodoFg' .. kw, { ctermfg = colour })
+      hl('TodoBg' .. kw, { ctermfg = colour, reverse = true, bold = true })
+    end
+  end
+
+  terminal_colours()
+  -- Re-apply once startup has finished (some plugins add highlight groups late)
+  -- and whenever a colorscheme is loaded (that clears highlights).
+  vim.api.nvim_create_autocmd({ 'VimEnter', 'ColorScheme' }, {
+    group = vim.api.nvim_create_augroup('terminal-colours', { clear = true }),
+    callback = terminal_colours,
+  })
 end
