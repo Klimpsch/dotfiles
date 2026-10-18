@@ -1,0 +1,44 @@
+# Nord theme for swaylock
+color=2E3440
+font=JetBrains Mono
+font-size=22
+indicator-radius=100
+indicator-thickness=8
+show-failed-attempts
+ignore-empty-password
+line-uses-ring
+
+# Idle
+inside-color=3B4252
+ring-color=4C566A
+text-color=ECEFF4
+separator-color=00000000
+
+# Typing / backspace highlights
+key-hl-color=88C0D0
+bs-hl-color=D08770
+
+# Clearing input
+inside-clear-color=3B4252
+ring-clear-color=EBCB8B
+text-clear-color=EBCB8B
+
+# Checking password
+inside-ver-color=3B4252
+ring-ver-color=5E81AC
+text-ver-color=88C0D0
+
+# Wrong password
+inside-wrong-color=3B4252
+ring-wrong-color=BF616A
+text-wrong-color=BF616A
+
+# Caps Lock warning
+ring-caps-lock-color=EBCB8B
+text-caps-lock-color=EBCB8B
+inside-caps-lock-color=3B4252
+
+# Keyboard layout label
+layout-bg-color=3B4252
+layout-border-color=00000000
+layout-text-color=D8DEE9
