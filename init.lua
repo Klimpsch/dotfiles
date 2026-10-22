@@ -10,13 +10,14 @@
     Lua refresher:  https://learnxinyminutes.com/docs/lua/  and  :help lua-guide
 
   Layout:
-     1. Options                    8. Autocomplete & snippets
-     2. Keymaps & autocmds         9. Treesitter
-     3. Plugin manager (vim.pack) 10. Statusline, buffers & focus
-     4. UI / core UX plugins      11. Tools (git, terminal, explorer, outline)
-     5. Search & navigation       12. Markdown
-     6. LSP                       13. Next steps
-     7. Formatting                14. Terminal colours
+     1. Options                    9. Treesitter
+     2. Keymaps & autocmds        10. Statusline, buffers & focus
+     3. Plugin manager (vim.pack) 11. Tools (git, terminal, explorer, outline)
+     4. UI / core UX plugins      12. Markdown
+     5. Search & navigation       13. Notes (obsidian.nvim)
+     6. LSP                       14. Next steps
+     7. Formatting                15. Terminal colours
+     8. Autocomplete & snippets
 --]]
 
 -- ============================================================
@@ -399,13 +400,14 @@ do
       { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       { '<leader>b', group = '[B]uffer' },
       { '<leader>m', group = '[M]arkdown' },
+      { '<leader>n', group = '[N]otes (Obsidian)', mode = { 'n', 'v' } },
       { 'gr', group = 'LSP Actions', mode = { 'n' } },
     },
   }
 
   -- [[ Colours ]]
   -- No colorscheme: colours come from the terminal's theme (see 'termguicolors'
-  -- in Section 1). A few small fix-ups for plugins live in Section 14.
+  -- in Section 1). A few small fix-ups for plugins live in Section 15.
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
@@ -484,12 +486,16 @@ do
   -- See `:help telescope` and `:help telescope.setup()`
   require('telescope').setup {
     -- You can put your default mappings / updates / etc. in here
-    --
-    -- defaults = {
-    --   mappings = {
-    --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-    --   },
-    -- },
+    defaults = {
+      mappings = {
+        -- Ctrl-j / Ctrl-k move down / up the results while typing in the prompt.
+        -- (<C-n>/<C-p> still work too.) In normal mode, plain j / k already work.
+        i = {
+          ['<C-j>'] = 'move_selection_next',
+          ['<C-k>'] = 'move_selection_previous',
+        },
+      },
+    },
     -- pickers = {}
     extensions = {
       ['ui-select'] = { require('telescope.themes').get_dropdown() },
@@ -805,6 +811,8 @@ do
     },
 
     sources = {
+      -- 'lsp' also covers obsidian.nvim's [[note]] and #tag completion (Section 13),
+      -- since obsidian.nvim provides it through a built-in language server.
       default = { 'lsp', 'path', 'snippets' },
     },
 
@@ -1008,6 +1016,7 @@ do
   -- Uses the `markdown` / `markdown_inline` parsers from Section 9.
   vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
   require('render-markdown').setup {
+	    enabled = false,
     -- Code block shading and borders need true colour; without it they show
     -- as reverse video and solid blocks, so turn them off (Section 1).
     code = { disable_background = true, border = 'none', language_border = ' ' },
@@ -1026,7 +1035,127 @@ do
 end
 
 -- ============================================================
--- SECTION 13: NEXT STEPS
+-- SECTION 13: NOTES (OBSIDIAN)
+-- obsidian.nvim: journals, links, tags and backlinks in an Obsidian vault
+-- ============================================================
+do
+  -- [[ obsidian.nvim ]]
+  -- Works directly on an Obsidian vault (a plain folder of markdown files), so
+  -- your notes stay compatible with the Obsidian app. Needs `ripgrep` on your PATH.
+  --
+  --  :Obsidian <Tab>        list subcommands
+  --  :checkhealth obsidian  check the setup
+  --
+  -- Inside a note:
+  --  <CR>        follow link / list notes with tag / toggle checkbox / fold heading
+  --  [o  ]o      jump to previous / next link
+  --  [[  #       autocomplete note links / tags (via blink.cmp, Section 8)
+  --  [[^  [[^^   link to a block in this note / anywhere in the vault
+  --  grr grn gra references / rename note / code actions (LSP keys, Sections 5-6)
+  vim.pack.add { { src = gh 'obsidian-nvim/obsidian.nvim', version = vim.version.range '*' } }
+
+  -- TODO: point this at your vault folder (used by the setup and <leader>nD below)
+  local vault = vim.fs.normalize '~/vaults/notes'
+
+  require('obsidian').setup {
+    legacy_commands = false, -- this option goes away in obsidian.nvim 4.0
+    workspaces = {
+      { name = 'notes', path = vault },
+    },
+    daily_notes = {
+      folder = 'journals', -- Logseq-style journal folder
+      date_format = '%Y-%m-%d',
+    },
+    picker = { name = 'telescope.nvim' }, -- Telescope is set up in Section 5
+
+    -- Name new notes after their title (e.g. "Project X.md"), like the Obsidian
+    -- app and Logseq do. The default is a Zettelkasten-style timestamp ID with
+    -- random letters (e.g. "1729112345-ABCD.md"), with the title as an alias.
+    note_id_func = require('obsidian.builtin').title_id,
+  }
+
+  -- Concealing lets obsidian.nvim render links and checkboxes nicely.
+  -- Set per markdown window so other filetypes (JSON etc.) aren't affected.
+  vim.api.nvim_create_autocmd('FileType', {
+    group = vim.api.nvim_create_augroup('obsidian-conceal', { clear = true }),
+    pattern = 'markdown',
+    callback = function() vim.opt_local.conceallevel = 2 end,
+  })
+
+  -- [[ Keymaps ]] — all under <leader>n ("[N]otes" group in which-key, Section 4)
+  local function map(mode, keys, cmd, desc) vim.keymap.set(mode, keys, cmd, { desc = desc }) end
+
+  -- Journals
+  map('n', '<leader>nj', '<cmd>Obsidian today<CR>', "Today's [J]ournal")
+  map('n', '<leader>ny', '<cmd>Obsidian yesterday<CR>', "[Y]esterday's journal")
+  map('n', '<leader>nd', '<cmd>Obsidian dailies -7 0<CR>', '[D]ailies (last 7 days)')
+
+  -- Finding
+  map('n', '<leader>nf', '<cmd>Obsidian quick_switch<CR>', '[F]ind note')
+  map('n', '<leader>ns', '<cmd>Obsidian search<CR>', '[S]earch notes')
+  map('n', '<leader>nt', '<cmd>Obsidian tags<CR>', '[T]ag index')
+  map('n', '<leader>nb', '<cmd>Obsidian backlinks<CR>', '[B]acklinks')
+  map('n', '<leader>nl', '<cmd>Obsidian links<CR>', '[L]inks in note')
+  map('n', '<leader>nc', '<cmd>Obsidian toc<CR>', 'Table of [C]ontents')
+
+  -- Creating
+  map('n', '<leader>nn', '<cmd>Obsidian new<CR>', '[N]ew note')
+  map('n', '<leader>nT', '<cmd>Obsidian new_from_template<CR>', 'New from [T]emplate')
+  map('n', '<leader>no', '<cmd>Obsidian open<CR>', '[O]pen in Obsidian app')
+  map('n', '<leader>np', function()
+    vim.cmd.edit(vim.fn.fnameescape(vault .. '/Projects Dashboard.md'))
+  end, '[P]roject dashboard')
+
+  -- Deleting: removes the current note's file for good (no trash) and closes it.
+  -- Asks first, and warns how many other notes link to it, since those links
+  -- will break. Counts [[Note]], [[Note|alias]], [[Note#heading]] and
+  -- [text](Note.md) style links, using ripgrep.
+  map('n', '<leader>nD', function()
+    local buf = vim.api.nvim_get_current_buf()
+    local path = vim.fs.normalize(vim.api.nvim_buf_get_name(buf))
+    if path == '' or not vim.startswith(path, vault .. '/') or not path:match '%.md$' then
+      vim.notify('Not a note in your vault: nothing deleted', vim.log.levels.WARN)
+      return
+    end
+
+    -- Find other notes that link here
+    local name = vim.fn.fnamemodify(path, ':t:r')
+    local escaped = (name:gsub('[%.%^%$%*%+%?%(%)%[%]%{%}|\\]', '\\%0'))
+    local pattern = '(\\[\\[|/)' .. escaped .. '(\\||#|\\]\\])|[(/]' .. escaped .. '\\.md[)#]'
+    local count, checked = 0, false
+    local ok, res = pcall(function() return vim.system({ 'rg', '--files-with-matches', '--glob', '*.md', '-e', pattern, vault }):wait() end)
+    if ok and (res.code == 0 or res.code == 1) then
+      checked = true
+      for file in (res.stdout or ''):gmatch '[^\n]+' do
+        if vim.fs.normalize(file) ~= path then count = count + 1 end
+      end
+    end
+
+    local msg = ('Delete "%s" permanently?'):format(name)
+    if not checked then
+      msg = msg .. '\n(Could not check for links to it: is ripgrep installed?)'
+    elseif count > 0 then
+      msg = msg .. ('\n%d note%s to it; those links will break.'):format(count, count == 1 and ' links' or 's link')
+    end
+    if vim.fn.confirm(msg, '&Yes\n&No', 2) ~= 1 then return end
+
+    if vim.fn.delete(path) ~= 0 then
+      vim.notify('Could not delete ' .. path, vim.log.levels.ERROR)
+      return
+    end
+    require('mini.bufremove').delete(buf, true) -- mini.nvim, Section 4
+    vim.notify('Deleted ' .. name)
+  end, '[D]elete note')
+
+  -- Visual mode: select text first. These use `:` (not <cmd>) so the
+  -- selected range is passed to the command.
+  map('x', '<leader>nl', ':Obsidian link<CR>', '[L]ink selection to note')
+  map('x', '<leader>nn', ':Obsidian link_new<CR>', 'Link selection to [N]ew note')
+  map('x', '<leader>ne', ':Obsidian extract_note<CR>', '[E]xtract selection to new note')
+end
+
+-- ============================================================
+-- SECTION 14: NEXT STEPS
 -- kickstart example plugins, custom plugin modules
 -- ============================================================
 do
@@ -1055,7 +1184,7 @@ do
 end
 
 -- ============================================================
--- SECTION 14: TERMINAL COLOURS
+-- SECTION 15: TERMINAL COLOURS
 -- Fix-ups so plugins use the terminal's palette (keep this last)
 -- ============================================================
 do
@@ -1105,6 +1234,21 @@ do
       hl('TodoFg' .. kw, { ctermfg = colour })
       hl('TodoBg' .. kw, { ctermfg = colour, reverse = true, bold = true })
     end
+
+    -- Buffer tabs (mini.tabline, Section 10). Its default colours come out the
+    -- same for every tab with this setup, so set them explicitly:
+    --   current buffer   inverted block (your terminal's fg/bg swapped)
+    --   shown in a split bold + underlined
+    --   other buffers    plain text
+    -- Unsaved changes turn the tab yellow (3).
+    hl('MiniTablineCurrent', { reverse = true, bold = true })
+    hl('MiniTablineVisible', { bold = true, underline = true })
+    hl('MiniTablineHidden', {})
+    hl('MiniTablineModifiedCurrent', { ctermfg = 3, reverse = true, bold = true })
+    hl('MiniTablineModifiedVisible', { ctermfg = 3, bold = true, underline = true })
+    hl('MiniTablineModifiedHidden', { ctermfg = 3 })
+    hl('MiniTablineFill', {})
+    hl('MiniTablineTabpagesection', { reverse = true })
   end
 
   terminal_colours()
