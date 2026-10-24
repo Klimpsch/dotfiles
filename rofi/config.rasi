@@ -1,0 +1,110 @@
+configuration {
+  modi: "drun,run,window";
+  show-icons: true;
+  display-drun: "Apps";
+  display-run: "Run";
+  display-window: "Windows";
+  drun-display-format: "{name}";
+  font: "Jet Brains Mono 12";
+}
+
+* {
+  nord0: #2E3440;
+  nord1: #3B4252;
+  nord2: #434C5E;
+  nord3: #4C566A;
+  nord4: #D8DEE9;
+  nord8: #88C0D0;
+  nord9: #81A1C1;
+  nord11: #BF616A;
+
+  background-color: transparent;
+  text-color: @nord4;
+  margin: 0;
+  padding: 0;
+  spacing: 0;
+}
+
+window {
+  width: 600px;
+  background-color: @nord0;
+  border: 2px;
+  border-color: @nord8;
+  border-radius: 12px;
+}
+
+mainbox {
+  padding: 16px;
+  spacing: 12px;
+  children: [ inputbar, message, listview, mode-switcher ];
+}
+
+inputbar {
+  background-color: @nord1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  spacing: 10px;
+  children: [ prompt, entry ];
+}
+
+prompt { text-color: @nord8; }
+
+entry {
+  placeholder: "Search…";
+  placeholder-color: @nord3;
+  cursor: text;
+}
+
+message {
+  background-color: @nord1;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+listview {
+  lines: 8;
+  columns: 1;
+  fixed-height: false;
+  scrollbar: false;
+  spacing: 4px;
+}
+
+element {
+  padding: 8px 12px;
+  border-radius: 8px;
+  spacing: 12px;
+}
+
+element normal.normal,
+element alternate.normal { background-color: transparent; text-color: @nord4; }
+
+element selected.normal  { background-color: @nord2; text-color: @nord8; }
+
+element normal.active,
+element alternate.active,
+element selected.active  { text-color: @nord9; }
+
+element normal.urgent,
+element alternate.urgent,
+element selected.urgent  { text-color: @nord11; }
+
+element-icon { size: 24px; }
+
+element-text {
+  text-color: inherit;
+  vertical-align: 0.5;
+}
+
+mode-switcher { spacing: 8px; }
+
+button {
+  padding: 6px;
+  border-radius: 8px;
+  background-color: @nord1;
+  text-color: @nord3;
+}
+
+button selected {
+  background-color: @nord8;
+  text-color: @nord0;
+}

@@ -125,7 +125,7 @@ do
   -- by accident). Delete this line if you use macros. Plugin windows that use
   -- `q` to close map it buffer-locally, so they keep working.
   vim.keymap.set('n', 'q', '<Nop>')
-
+  vim.keymap.set('n', '<leader>C', function() vim.cmd.edit(vim.env.MYVIMRC) end, { desc = 'Edit [C]onfig (init.lua)' })
   -- [[ Clipboard: copy, cut, paste ]]
   --  y / Y           copy to clipboard
   --  p / P           paste from clipboard
@@ -863,8 +863,10 @@ do
 
     -- Enable treesitter indentation if this language has an indent query;
     -- otherwise Vim's built-in indentexpr is used.
+    -- `vim.bo[buf]` (not `vim.bo`) so it lands on the right buffer even when
+    -- this runs later, after a parser finishes installing.
     local has_indent_query = vim.treesitter.query.get(language, 'indents') ~= nil
-    if has_indent_query then vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" end
+    if has_indent_query then vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" end
   end
 
   local available_parsers = require('nvim-treesitter').get_available()
@@ -1014,14 +1016,38 @@ do
   -- [[ In-buffer rendering ]]
   -- Renders headings, code blocks, lists, tables, etc. directly in the buffer.
   -- Uses the `markdown` / `markdown_inline` parsers from Section 9.
+  -- Inline `code` is shown as plain text (see RenderMarkdownCodeInline in Section 15).
   vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
   require('render-markdown').setup {
-	    enabled = false,
+    enabled = false,
     -- Code block shading and borders need true colour; without it they show
+    heading = { icons = { '' }, position = 'inline' },
     -- as reverse video and solid blocks, so turn them off (Section 1).
-    code = { disable_background = true, border = 'none', language_border = ' ' },
+    code = {
+      disable_background = true,
+      border = 'none',
+      language_border = ' ',
+      -- With no background shading, indent code blocks so they stand
+      -- apart from the surrounding text.
+      left_margin = 2,
+    },
   }
-  vim.keymap.set('n', '<leader>mp', '<cmd>RenderMarkdown toggle<CR>', { desc = '[M]arkdown [P]review (in-buffer) toggle' })
+  vim.keymap.set('n', '<leader>mp', '<cmd>RenderMarkdown buf_toggle<CR>', { desc = '[M]arkdown [P]review (in-buffer) toggle' })
+
+  -- render-markdown keeps a list of every buffer it has attached to and never
+  -- removes closed ones (e.g. a Telescope preview of a .md file). After a
+  -- <leader>R reload re-runs setup(), any command that loops over that list
+  -- (`:RenderMarkdown`, `toggle`, `enable`, `disable`) hits a closed buffer and
+  -- fails with "Invalid buffer id". Drop buffers from the list as they're wiped.
+  vim.api.nvim_create_autocmd('BufWipeout', {
+    group = vim.api.nvim_create_augroup('render-markdown-prune', { clear = true }),
+    callback = function(args)
+      local buffers = require('render-markdown.core.manager').buffers
+      for i = #buffers, 1, -1 do
+        if buffers[i] == args.buf then table.remove(buffers, i) end
+      end
+    end,
+  })
 
   -- [[ Browser preview ]]
   -- Opens a live-synced preview in your default browser. Requires Node.js/npm
@@ -1227,6 +1253,19 @@ do
 
     -- Twilight's "dimmed" text looks like a comment
     hl('Twilight', { link = 'Comment' })
+
+    -- render-markdown inline `code` (Section 12): plain text, no colour or block.
+    -- The second line clears treesitter's own highlight for code spans, which
+    -- links to Comment (italic) by default and would otherwise show through.
+    hl('RenderMarkdownCodeInline', {})
+    hl('@markup.raw.markdown_inline', {})
+    
+
+    local heading_colours = { 4, 6, 2, 3, 5, 1 } -- #, ##, ###, ####, #####, ######
+    for level, colour in ipairs(heading_colours) do
+      hl('@markup.heading.' .. level .. '.markdown', { ctermfg = colour, bold = true })
+      hl('RenderMarkdownH' .. level .. 'Bg', {})
+    end
 
     -- todo-comments: TODO, FIX, NOTE, etc. in the terminal's red/yellow/cyan/...
     local todo = { FIX = 1, TODO = 6, HACK = 3, WARN = 3, PERF = 5, NOTE = 4, TEST = 5 }
