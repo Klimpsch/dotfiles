@@ -1,0 +1,41 @@
+
+# USGC paper — foot
+# include=~/.config/foot/usgc-paper.ini   (in foot.ini, [main] section)
+
+[main]
+# foot only uses later fonts for missing glyphs; if you don't own Berkeley Mono,
+# replace the first entry (e.g. font=JetBrains Mono:size=11).
+font=JetBrains Mono:size=11
+pad=12x10
+
+[cursor]
+style=block
+color=111111 FF4400
+
+[colors]
+foreground=111111
+background=EBEAE4
+selection-foreground=EBEAE4
+selection-background=111111
+urls=FF4400
+regular0=111111
+regular1=B3261E
+regular2=2D6A3E
+regular3=7F5400
+regular4=1F45A8
+regular5=7B2D74
+regular6=0B6670
+regular7=8E8C84
+bright0=5E5D58
+bright1=B83400
+bright2=336F45
+bright3=865B00
+bright4=2F58C4
+bright5=923C89
+bright6=0C6B75
+bright7=FAFAF7
+
+# >>> usgc-theme >>>
+[main]
+include=/home/user/.config/foot/usgc-current.ini
+# <<< usgc-theme <<<

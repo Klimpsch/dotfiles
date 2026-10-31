@@ -21,8 +21,6 @@ set $term foot
 #
 # No titlebars: a thin 2px border only, so you can still see which window is focused.
 # Change "pixel 2" to "none" for no border at all.
-default_border pixel 4
-default_floating_border pixel 2
 gaps inner 5
 gaps outer 5
 ### Output configuration
@@ -129,10 +127,10 @@ output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 #
 # Workspaces:
 #
-    set $ws1 "1:term"
-    set $ws2 "2:web"
-    set $ws3 "3:code"
-    set $ws4 "4:media"
+set $ws1  "1:term"
+set $ws2  "2:web"
+set $ws3  "3:lab"
+set $ws4  "4:code"
 
     # Switch to workspace
     bindsym $mod+1 workspace number $ws1
@@ -241,6 +239,14 @@ bar {
 }
 
 include /etc/sway/config.d/*
-include ~/.config/sway/nord.conf
 bindsym Mod4+l exec swaylock -f -c 2E3440
 
+
+# >>> usgc-theme >>>
+include /home/user/.config/sway/usgc-current
+bindsym $mod+Shift+t exec /home/user/.config/sway/usgc-theme toggle
+# <<< usgc-theme <<<
+
+gaps inner 5
+default_border normal 0
+default_floating_border normal 0

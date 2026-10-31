@@ -1,0 +1,19 @@
+# USGC light — sway. Managed by usgc-theme (loaded via ~/.config/sway/usgc-current).
+
+font pango:Berkeley Mono, JetBrains Mono, monospace 10
+
+# Hairline borders, flat title bars, left-aligned like a drawing title block.
+default_border normal 2
+default_floating_border normal 2
+titlebar_border_thickness 0
+titlebar_padding 8 3
+title_align left
+gaps inner 6
+
+# class                 border        background    text          indicator     child_border
+client.focused          #111111     #111111     #EBEAE4     #FF4400 #111111
+client.focused_inactive #5E5D58 #DEDCD4 #111111     #5E5D58 #5E5D58
+client.unfocused        #B4B2AA   #DEDCD4 #5E5D58 #B4B2AA   #B4B2AA
+client.urgent           #FF4400 #FF4400 #111111 #FF4400 #FF4400
+client.background       #EBEAE4
+output * bg #A8A69E solid_color

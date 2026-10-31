@@ -1,0 +1,179 @@
+/*
+ * USGC light — rofi 1.7+
+ * Use:  rofi -show drun -theme ~/.config/rofi/usgc-light.rasi
+ *  or in config.rasi:  @theme "~/.config/rofi/usgc-light.rasi"
+ *
+ * Laid out like a catalog sheet: title block, entry field, ruled list,
+ * and a footer that exposes state (filtered / total rows).
+ */
+
+* {
+    paper:   #EBEAE4;
+    panel:   #DEDCD4;
+    rule:    #B4B2AA;
+    ink:     #111111;
+    graphite:#5E5D58;
+    signal:  #FF4400;
+    onsignal:#111111;
+
+    font: "Berkeley Mono, JetBrains Mono, monospace 11";
+    background-color: transparent;
+    text-color: @ink;
+    margin: 0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    width: 680px;
+    location: center;
+    anchor: center;
+    background-color: @paper;
+    border: 2px;
+    border-color: @ink;
+    border-radius: 0;
+}
+
+mainbox {
+    children: [ titleblock, inputbar, listview, footer ];
+}
+
+/* ── title block ───────────────────────────── */
+titleblock {
+    orientation: horizontal;
+    expand: false;
+    background-color: @ink;
+    padding: 6px 12px;
+    children: [ textbox-catalog, textbox-title, textbox-mode ];
+}
+textbox-catalog {
+    expand: false;
+    content: "MX-001";
+    text-color: @signal;
+    background-color: inherit;
+    padding: 0 14px 0 0;
+}
+textbox-title {
+    expand: true;
+    content: "LAUNCHER";
+    text-color: @paper;
+    background-color: inherit;
+}
+textbox-mode {
+    expand: false;
+    content: "U.S.A.";
+    text-color: @graphite;
+    background-color: inherit;
+}
+
+/* ── entry ─────────────────────────────────── */
+inputbar {
+    padding: 12px;
+    spacing: 10px;
+    border: 0 0 2px 0;
+    border-color: @ink;
+    children: [ prompt, textbox-arrow, entry ];
+}
+prompt {
+    text-color: @ink;
+}
+textbox-arrow {
+    expand: false;
+    content: "→";
+    text-color: @signal;
+}
+entry {
+    placeholder: "type to filter";
+    placeholder-color: @graphite;
+    cursor: text;
+}
+
+/* ── list ──────────────────────────────────── */
+listview {
+    lines: 9;
+    columns: 1;
+    fixed-height: true;
+    scrollbar: true;
+    padding: 6px 0;
+}
+scrollbar {
+    handle-width: 4px;
+    handle-color: @ink;
+    background-color: @panel;
+    margin: 0 4px 0 0;
+}
+element {
+    padding: 6px 12px;
+    spacing: 10px;
+    border: 0 0 0 4px;
+    border-color: transparent;
+}
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+    text-color: @ink;
+}
+element selected.normal {
+    background-color: @ink;
+    text-color: @paper;
+    border-color: @signal;
+}
+element normal.urgent,
+element alternate.urgent {
+    text-color: @signal;
+}
+element selected.urgent {
+    background-color: @signal;
+    text-color: @onsignal;
+}
+element normal.active,
+element alternate.active {
+    text-color: @ink;
+    background-color: @panel;
+}
+element selected.active {
+    background-color: @ink;
+    text-color: @signal;
+}
+element-icon {
+    size: 18px;
+    background-color: inherit;
+}
+element-text {
+    background-color: inherit;
+    text-color: inherit;
+    highlight: bold underline;
+}
+
+/* ── footer: expose state ──────────────────── */
+footer {
+    orientation: horizontal;
+    expand: false;
+    padding: 5px 12px;
+    border: 2px 0 0 0;
+    border-color: @ink;
+    background-color: @panel;
+    children: [ textbox-rows, num-filtered-rows, textbox-slash, num-rows, textbox-spacer, textbox-hint ];
+}
+textbox-rows   { expand: false; content: "ROWS "; text-color: @graphite; }
+num-filtered-rows { expand: false; text-color: @ink; }
+textbox-slash  { expand: false; content: " / "; text-color: @graphite; }
+num-rows       { expand: false; text-color: @graphite; }
+textbox-spacer { expand: true; content: ""; }
+textbox-hint   { expand: false; content: "RET open · ESC close"; text-color: @graphite; }
+
+message {
+    padding: 8px 12px;
+    border: 0 0 2px 0;
+    border-color: @ink;
+    background-color: @panel;
+}
+textbox {
+    text-color: @ink;
+}
+error-message {
+    padding: 12px;
+    background-color: @paper;
+    border: 2px;
+    border-color: @signal;
+}

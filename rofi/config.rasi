@@ -108,3 +108,7 @@ button selected {
   background-color: @nord8;
   text-color: @nord0;
 }
+
+/* >>> usgc-theme >>> */
+@theme "/home/user/.config/rofi/usgc-current.rasi"
+/* <<< usgc-theme <<< */

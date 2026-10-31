@@ -1,0 +1,63 @@
+#!/bin/sh
+# usgc-theme — switch the USGC theme between light and dark everywhere at once.
+#
+#   usgc-theme            toggle
+#   usgc-theme light      force light
+#   usgc-theme dark       force dark
+#   usgc-theme status     print current mode
+#
+# Installed to ~/.config/sway/usgc-theme by install.sh.
+# Bound to $mod+Shift+t in sway, and to a click on the Waybar clock.
+
+set -u
+C=${XDG_CONFIG_HOME:-$HOME/.config}
+
+current() {
+    case $(readlink "$C/sway/usgc-current" 2>/dev/null) in
+        *dark) echo dark ;;
+        *)     echo light ;;
+    esac
+}
+
+foot_live_switch() {
+    # foot ≥1.24 switches running windows on SIGUSR1 (dark) / SIGUSR2 (light).
+    # Older foot would *exit* on those signals, so never send them there.
+    command -v foot >/dev/null 2>&1 || return 1
+    v=$(foot --version 2>/dev/null | awk '{print $3}')
+    major=${v%%.*}
+    rest=${v#*.}
+    minor=${rest%%.*}
+    case $major$minor in *[!0-9]*|"") return 1 ;; esac
+    [ "$major" -gt 1 ] || [ "$minor" -ge 24 ] || return 1
+    # and only if the installed theme file actually defines both palettes
+    grep -qE '^\[(colors-light|colors2)\]' "$C/foot/usgc-current.ini" 2>/dev/null
+}
+
+mode=${1:-toggle}
+case $mode in
+    status) current; exit 0 ;;
+    toggle) if [ "$(current)" = dark ]; then mode=light; else mode=dark; fi ;;
+    light|dark) ;;
+    *) echo "usage: usgc-theme [light|dark|toggle|status]" >&2; exit 2 ;;
+esac
+
+# Point every app's "current" link at the chosen mode.
+ln -sfn "usgc-$mode"      "$C/sway/usgc-current"
+ln -sfn "usgc-$mode.ini"  "$C/foot/usgc-current.ini"
+ln -sfn "usgc-$mode.css"  "$C/waybar/style.css"
+ln -sfn "usgc-$mode.rasi" "$C/rofi/usgc-current.rasi"
+
+# Apply to what's running. Each step is skipped quietly if that app isn't up.
+pkill -USR2 -x waybar 2>/dev/null          # waybar: reload style
+if foot_live_switch; then
+    if [ "$mode" = dark ]; then sig=USR1; else sig=USR2; fi
+    pkill "-$sig" -x foot 2>/dev/null
+    pkill "-$sig" -x footclient 2>/dev/null
+fi
+# rofi reads its theme each time it opens, so nothing to do there.
+# sway last: if waybar is sway's bar, a reload may restart it (and this script's parent).
+if [ -n "${SWAYSOCK:-}" ] || pgrep -x sway >/dev/null 2>&1; then
+    swaymsg reload >/dev/null 2>&1
+fi
+
+echo "$mode"
